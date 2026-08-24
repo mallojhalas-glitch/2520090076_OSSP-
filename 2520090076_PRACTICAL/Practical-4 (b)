@@ -1,1 +1,61 @@
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+int main()
+{
+    int i;
+    pid_t children[3];
+    pid_t pid;
+    int status;
+
+    printf("Parent Process: PID = %d\n", getpid());
+
+    // Create 3 child processes
+    for (i = 0; i < 3; i++)
+    {
+        pid = fork();
+
+        if (pid < 0)
+        {
+            perror("fork failed");
+            exit(1);
+        }
+
+        if (pid == 0)
+        {
+            printf("Child %d: PID = %d, PPID = %d\n",
+                   i + 1, getpid(), getppid());
+
+            sleep((i + 1) * 2);
+
+            printf("Child %d: Completed\n", i + 1);
+            exit(i + 1);
+        }
+
+        children[i] = pid;
+    }
+
+    // Parent waits for specific children
+    for (i = 0; i < 3; i++)
+    {
+        pid = waitpid(children[i], &status, 0);
+
+        if (pid > 0)
+        {
+            printf("Parent: Child with PID %d completed\n", pid);
+
+            if (WIFEXITED(status))
+            {
+                printf("Exit status = %d\n",
+                       WEXITSTATUS(status));
+            }
+        }
+    }
+
+    printf("Parent: All children completed.\n");
+
+    return 0;
+}
